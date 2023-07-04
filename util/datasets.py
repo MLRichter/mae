@@ -23,7 +23,7 @@ from fast_imagenet import ImageNetDatasetH5
 
 def build_dataset(is_train, args):
     transform = build_transform(is_train, args)
-    if isfile(args.data_path) and args.data_path.endswith("hdf5"):
+    if args.data_path.endswith("hdf5"):
         print("Detected file instead of folder, assuming hdf5")
         dataset = ImageNetDatasetH5(args.data_path, split='train' if is_train else 'val', transform=transform)
     else:
