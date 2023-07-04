@@ -27,6 +27,7 @@ def parse_args():
     parser.add_argument("--partition", default="learnfair", type=str, help="Partition where to submit")
     parser.add_argument("--use_volta32", action='store_true', help="Request 32G V100 GPUs")
     parser.add_argument('--comment', default="", type=str, help="Comment to pass to scheduler")
+    parser.add_argument("--account", default=None, type=str, help="account where to submit")
     return parser.parse_args()
 
 
@@ -105,12 +106,14 @@ def main():
         kwargs['slurm_constraint'] = 'volta32gb'
     if args.comment:
         kwargs['slurm_comment'] = args.comment
+    if args.account:
+        kwargs['slurm_account'] = args.account
 
     executor.update_parameters(
         mem_gb=40 * num_gpus_per_node,
         gpus_per_node=num_gpus_per_node,
         tasks_per_node=num_gpus_per_node,  # one task per GPU
-        cpus_per_task=10,
+        cpus_per_task=6,
         nodes=nodes,
         timeout_min=timeout_min,  # max is 60 * 72
         # Below are cluster dependent parameters
