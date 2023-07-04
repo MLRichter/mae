@@ -28,6 +28,7 @@ import timm
 import timm.optim.optim_factory as optim_factory
 
 import util.misc as misc
+from fast_imagenet import ImageNetDatasetH5
 from util.misc import NativeScalerWithGradNormCount as NativeScaler
 
 import models_mae
@@ -126,7 +127,11 @@ def main(args):
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
-    dataset_train = datasets.ImageFolder(os.path.join(args.data_path, 'train'), transform=transform_train)
+    if args.data_path.endswith("hdf5"):
+        print("Detected file instead of folder, assuming hdf5")
+        dataset_train = ImageNetDatasetH5(args.data_path, split='train', transform=transform_train)
+    else:
+        dataset_train = datasets.ImageFolder(os.path.join(args.data_path, 'train'), transform=transform_train)
     print(dataset_train)
 
     if True:  # args.distributed:
