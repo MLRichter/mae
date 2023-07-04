@@ -43,7 +43,7 @@ class ImageNetDatasetH5(Dataset):
         # Read h5 file
         if self.h5_data is None:
 
-            self.h5_data = h5py.File(smart_open(self.h5_path, "r"), mode='r')
+            self.h5_data = h5py.File(open(self.h5_path, "r"), mode='r')
             # print([d for d in self.h5_data])
             # print(self.h5_data['targets'][0])
         # Extract info
