@@ -18,7 +18,11 @@ from pathlib import Path
 
 import torch
 import torch.distributed as dist
-from torch._six import inf
+
+try:
+    from torch._six import inf
+except:
+    from torch import inf
 
 
 class SmoothedValue(object):
