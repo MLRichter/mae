@@ -319,6 +319,8 @@ def save_model(args, epoch, model, model_without_ddp, optimizer, loss_scaler):
 def load_model(args, model_without_ddp, optimizer, loss_scaler):
     if args.auto_resume:
         log_path = Path(args.output_dir) / "last.pth"
+        print("Auto-Resume triggered, looking for checkpoint")
+
         if log_path.exists():
             print("Auto-Resume: Found existing checkpoint")
             checkpoint = torch.load(log_path, map_location='cpu')
@@ -330,6 +332,8 @@ def load_model(args, model_without_ddp, optimizer, loss_scaler):
                 if 'scaler' in checkpoint:
                     loss_scaler.load_state_dict(checkpoint['scaler'])
                 print("With optim & sched!")
+    else:
+        print("Autoresume disabled")
     if args.resume:
         if args.resume.startswith('https'):
             checkpoint = torch.hub.load_state_dict_from_url(
