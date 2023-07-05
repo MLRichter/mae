@@ -296,7 +296,7 @@ def save_model(args, epoch, model, model_without_ddp, optimizer, loss_scaler):
     output_dir = Path(args.output_dir)
     epoch_name = str(epoch)
     if loss_scaler is not None:
-        checkpoint_paths = [output_dir / ('checkpoint-%s.pth' % epoch_name)]
+        checkpoint_paths = [output_dir / ('checkpoint-%s.pth' % epoch_name), output_dir / "last.pth"]
         for checkpoint_path in checkpoint_paths:
             to_save = {
                 'model': model_without_ddp.state_dict(),
@@ -313,6 +313,19 @@ def save_model(args, epoch, model, model_without_ddp, optimizer, loss_scaler):
 
 
 def load_model(args, model_without_ddp, optimizer, loss_scaler):
+    if args.auto_resume:
+        log_path = Path(args.output_dir) / "last.pth"
+        if log_path.exists():
+            print("Auto-Resume: Found existing checkpoint")
+            checkpoint = torch.load(log_path, map_location='cpu')
+            model_without_ddp.load_state_dict(checkpoint['model'])
+            print("Resume checkpoint %s" % args.auto_resume)
+            if 'optimizer' in checkpoint and 'epoch' in checkpoint and not (hasattr(args, 'eval') and args.eval):
+                optimizer.load_state_dict(checkpoint['optimizer'])
+                args.start_epoch = checkpoint['epoch'] + 1
+                if 'scaler' in checkpoint:
+                    loss_scaler.load_state_dict(checkpoint['scaler'])
+                print("With optim & sched!")
     if args.resume:
         if args.resume.startswith('https'):
             checkpoint = torch.hub.load_state_dict_from_url(
@@ -327,6 +340,8 @@ def load_model(args, model_without_ddp, optimizer, loss_scaler):
             if 'scaler' in checkpoint:
                 loss_scaler.load_state_dict(checkpoint['scaler'])
             print("With optim & sched!")
+
+
 
 
 def all_reduce_mean(x):
