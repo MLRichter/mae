@@ -39,6 +39,20 @@ import models_vit
 from engine_finetune import train_one_epoch, evaluate
 
 
+def str2bool(v):
+    """
+    Converts string to bool type; enables command line
+    arguments in the format of '--arg1 true --arg2 false'
+    """
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
 def get_args_parser():
     parser = argparse.ArgumentParser('MAE fine-tuning for image classification', add_help=False)
     parser.add_argument('--batch_size', default=64, type=int,
@@ -151,12 +165,17 @@ def get_args_parser():
     parser.add_argument('--dist_on_itp', action='store_true')
     parser.add_argument('--dist_url', default='env://',
                         help='url used to set up distributed training')
+    parser.add_argument('--copy', type=str2bool, default=False)
+
 
     return parser
 
 
 def main(args):
     misc.init_distributed_mode(args)
+    if args.copy:
+        os.system(f"rsync -r --info=progress {args.data_path} $SLURM_TMPDIR/{Path(args.data_path).name}")
+        args.data_path = os.environ["SLURM_TMPDIR"] + "/" + Path(args.data_path).name
 
     print('job dir: {}'.format(os.path.dirname(os.path.realpath(__file__))))
     print("{}".format(args).replace(', ', ',\n'))
