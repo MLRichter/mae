@@ -107,6 +107,8 @@ def main():
         kwargs['slurm_constraint'] = 'volta32gb'
     if args.comment:
         kwargs['slurm_comment'] = args.comment
+    if args.account:
+        kwargs['slurm_account'] = args.account
 
     executor.update_parameters(
         mem_gb=40 * num_gpus_per_node,
