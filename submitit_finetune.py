@@ -27,16 +27,22 @@ def parse_args():
     parser.add_argument("--partition", default="learnfair", type=str, help="Partition where to submit")
     parser.add_argument("--use_volta32", action='store_true', help="Request 32G V100 GPUs")
     parser.add_argument('--comment', default="", type=str, help="Comment to pass to scheduler")
+    parser.add_argument("--account", default=None, type=str, help="account where to submit")
     return parser.parse_args()
 
 
 def get_shared_folder() -> Path:
-    user = os.getenv("USER")
-    if Path("/checkpoint/").is_dir():
-        p = Path(f"/checkpoint/{user}/experiments")
+    if Path("/home/mlr/scratch/mae").is_dir():
+        p = Path(f"/home/mlr/projects/def-pal/mlr/ConvNeXt/checkpoint")
         p.mkdir(exist_ok=True)
         return p
+    elif Path("/scratch/mlrichter/").is_dir():
+        p = Path("/scratch/mlrichter/checkpoint")
+        p.mkdir(exist_ok=True)
+        return p
+
     raise RuntimeError("No shared folder available")
+
 
 
 def get_init_file():
@@ -106,7 +112,7 @@ def main():
         mem_gb=40 * num_gpus_per_node,
         gpus_per_node=num_gpus_per_node,
         tasks_per_node=num_gpus_per_node, # one task per GPU
-        cpus_per_task=10,
+        cpus_per_task=6,
         nodes=nodes,
         timeout_min=timeout_min,
         # Below are cluster dependent parameters
