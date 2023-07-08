@@ -345,7 +345,7 @@ def main(args):
     print(f"Start training for {args.epochs} epochs")
     start_time = time.time()
     max_accuracy = 0.0
-    if args.model_ema and args.model_ema_eval:
+    if args.model_ema:
         max_accuracy_ema = 0.0
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
@@ -368,7 +368,7 @@ def main(args):
         print(f'Max accuracy: {max_accuracy:.2f}%')
 
         # repeat testing routines for EMA, if ema eval is turned on
-        if args.model_ema and args.model_ema_eval:
+        if args.model_ema:
             test_stats_ema = evaluate(data_loader_val, model_ema.ema, device, use_amp=args.use_amp)
             print(f"Accuracy of the model EMA on {len(dataset_val)} test images: {test_stats_ema['acc1']:.1f}%")
             if max_accuracy_ema < test_stats_ema["acc1"]:
