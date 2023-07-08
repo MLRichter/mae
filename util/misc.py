@@ -18,6 +18,8 @@ from pathlib import Path
 
 import torch
 import torch.distributed as dist
+from timm.utils import get_state_dict
+
 
 try:
     from torch._six import inf
@@ -296,7 +298,7 @@ def get_grad_norm_(parameters, norm_type: float = 2.0) -> torch.Tensor:
     return total_norm
 
 
-def save_model(args, epoch, model, model_without_ddp, optimizer, loss_scaler):
+def save_model(args, epoch, model, model_without_ddp, optimizer, loss_scaler, model_ema):
     output_dir = Path(args.output_dir)
     epoch_name = str(epoch)
     if loss_scaler is not None:
@@ -310,13 +312,16 @@ def save_model(args, epoch, model, model_without_ddp, optimizer, loss_scaler):
                 'args': args,
             }
 
+            if model_ema is not None:
+                to_save['model_ema'] = get_state_dict(model_ema)
+
             save_on_master(to_save, checkpoint_path)
     else:
         client_state = {'epoch': epoch}
         model.save_checkpoint(save_dir=args.output_dir, tag="checkpoint-%s" % epoch_name, client_state=client_state)
 
 
-def load_model(args, model_without_ddp, optimizer, loss_scaler):
+def load_model(args, model_without_ddp, optimizer, loss_scaler, ema_model=None):
     if args.auto_resume:
         log_path = Path(args.output_dir) / "last.pth"
         print("Auto-Resume triggered, looking for checkpoint")
@@ -324,6 +329,11 @@ def load_model(args, model_without_ddp, optimizer, loss_scaler):
         if log_path.exists():
             print("Auto-Resume: Found existing checkpoint")
             checkpoint = torch.load(log_path, map_location='cpu')
+            if ema_model is not None:
+                print("Loading EMA-checkpoint")
+                checkpoint_ema = torch.load(log_path, map_location='cpu')
+                ema_model.load_state_dict(checkpoint_ema["model_ema"])
+
             model_without_ddp.load_state_dict(checkpoint['model'])
             print("Resume checkpoint %s" % args.auto_resume)
             if 'optimizer' in checkpoint and 'epoch' in checkpoint and not (hasattr(args, 'eval') and args.eval):

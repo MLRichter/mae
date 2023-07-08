@@ -37,6 +37,7 @@ from util.misc import NativeScalerWithGradNormCount as NativeScaler
 import models_vit
 
 from engine_finetune import train_one_epoch, evaluate
+from timm.utils import ModelEma
 
 
 def str2bool(v):
@@ -169,6 +170,12 @@ def get_args_parser():
                         help='url used to set up distributed training')
     parser.add_argument('--copy', type=str2bool, default=False)
 
+    parser.add_argument('--model_ema', type=str2bool, default=False)
+    parser.add_argument('--model_ema_decay', type=float, default=0.9999, help='')
+    parser.add_argument('--model_ema_force_cpu', type=str2bool, default=False, help='')
+    parser.add_argument('--model_ema_eval', type=str2bool, default=False, help='Using ema to eval during training.')
+
+
 
     return parser
 
@@ -279,6 +286,16 @@ def main(args):
 
     model.to(device)
 
+    model_ema = None
+    if args.model_ema:
+        # Important to create EMA model after cuda(), DP wrapper, and AMP but before SyncBN and DDP wrapper
+        model_ema = ModelEma(
+            model,
+            decay=args.model_ema_decay,
+            device='cpu' if args.model_ema_force_cpu else '',
+            resume='')
+        print("Using EMA with decay = %.8f" % args.model_ema_decay)
+
     model_without_ddp = model
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
 
@@ -318,7 +335,7 @@ def main(args):
 
     print("criterion = %s" % str(criterion))
 
-    misc.load_model(args=args, model_without_ddp=model_without_ddp, optimizer=optimizer, loss_scaler=loss_scaler)
+    misc.load_model(args=args, model_without_ddp=model_without_ddp, optimizer=optimizer, loss_scaler=loss_scaler, ema_model=model_ema)
 
     if args.eval:
         test_stats = evaluate(data_loader_val, model, device)
@@ -328,6 +345,8 @@ def main(args):
     print(f"Start training for {args.epochs} epochs")
     start_time = time.time()
     max_accuracy = 0.0
+    if args.model_ema and args.model_ema_eval:
+        max_accuracy_ema = 0.0
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             data_loader_train.sampler.set_epoch(epoch)
@@ -341,13 +360,26 @@ def main(args):
         if args.output_dir:
             misc.save_model(
                 args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
-                loss_scaler=loss_scaler, epoch=epoch)
+                loss_scaler=loss_scaler, epoch=epoch, model_ema=model_ema)
 
         test_stats = evaluate(data_loader_val, model, device)
         print(f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.1f}%")
         max_accuracy = max(max_accuracy, test_stats["acc1"])
         print(f'Max accuracy: {max_accuracy:.2f}%')
 
+        # repeat testing routines for EMA, if ema eval is turned on
+        if args.model_ema and args.model_ema_eval:
+            test_stats_ema = evaluate(data_loader_val, model_ema.ema, device, use_amp=args.use_amp)
+            print(f"Accuracy of the model EMA on {len(dataset_val)} test images: {test_stats_ema['acc1']:.1f}%")
+            if max_accuracy_ema < test_stats_ema["acc1"]:
+                max_accuracy_ema = test_stats_ema["acc1"]
+                print(f'Max EMA accuracy: {max_accuracy_ema:.2f}%')
+            if log_writer is not None:
+                log_writer.add_scalar('perf/test_acc1_ema', test_stats_ema['acc1'], epoch)
+                log_writer.add_scalar('perf/test_acc5_ema', test_stats_ema['acc5'], epoch)
+                log_writer.add_scalar('perf/test_loss_ema', test_stats_ema['loss'], epoch)
+        else:
+            test_stats_ema = {}
         if log_writer is not None:
             log_writer.add_scalar('perf/test_acc1', test_stats['acc1'], epoch)
             log_writer.add_scalar('perf/test_acc5', test_stats['acc5'], epoch)
@@ -355,6 +387,7 @@ def main(args):
 
         log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
                         **{f'test_{k}': v for k, v in test_stats.items()},
+                        **{f'test_{k}_ema': v for k, v in test_stats.items()},
                         'epoch': epoch,
                         'n_parameters': n_parameters}
 
