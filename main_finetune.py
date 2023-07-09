@@ -369,7 +369,7 @@ def main(args):
 
         # repeat testing routines for EMA, if ema eval is turned on
         if args.model_ema:
-            test_stats_ema = evaluate(data_loader_val, model_ema.ema, device, use_amp=args.use_amp)
+            test_stats_ema = evaluate(data_loader_val, model_ema.ema, device)
             print(f"Accuracy of the model EMA on {len(dataset_val)} test images: {test_stats_ema['acc1']:.1f}%")
             if max_accuracy_ema < test_stats_ema["acc1"]:
                 max_accuracy_ema = test_stats_ema["acc1"]
