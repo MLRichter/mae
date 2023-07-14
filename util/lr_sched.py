@@ -21,13 +21,40 @@ def adjust_learning_rate(optimizer, epoch, args):
     return lr
 
 
-def adjust_mask_rate(epoch, epochs, mask_rate, warmup_epochs, min_mask):
+def adjust_mask_rate(epoch, cosine_epochs, mask_rate, linear_epochs, min_mask):
     """Decay the rate of UNMASKED tokens with half-cycle cosine after warmup"""
-    if epoch < warmup_epochs:
-        mask_rate = min_mask * epoch / warmup_epochs
+    if epoch < linear_epochs:
+        mask_rate = min_mask * epoch / linear_epochs
+    elif epoch > cosine_epochs:
+        return mask_rate
     else:
-        epoch = epochs - (epoch - warmup_epochs)
+        epoch = cosine_epochs - (epoch - linear_epochs)
         mask_rate = min_mask + (mask_rate - min_mask) * 0.5 * \
-            (1. + math.cos(math.pi * (epoch - warmup_epochs) / (epochs - warmup_epochs)))
+            (1. + math.cos(math.pi * (epoch - linear_epochs) / (cosine_epochs - linear_epochs)))
     return mask_rate
 
+
+"""def plot_mask_rate():
+    actual_epochs = 800
+    cosine_epochs = 400
+    linear_epochs = 0
+    min_mask = 0.0
+    mask_rates = []
+
+    for epoch in range(actual_epochs + 1):
+        mask_rate = adjust_mask_rate(epoch, cosine_epochs, 0.75, linear_epochs, min_mask)
+        mask_rates.append(mask_rate)
+
+    plt.plot(range(actual_epochs + 1), mask_rates)
+    plt.xlabel('Epoch')
+    plt.ylabel('Mask Rate')
+    plt.title('Mask Rate Decay')
+    plt.show()
+
+plot_mask_rate()
+
+
+if __name__ == '__main__':
+
+    plot_mask_rate()
+"""

@@ -69,8 +69,12 @@ def get_args_parser():
 
     parser.add_argument('--mask_ratio', default=0.75, type=float,
                         help='Masking ratio (percentage of removed patches).')
-    parser.add_argument('--min_mask', default=0.25, type=float,
+    parser.add_argument('--min_mask', default=0.0, type=float,
                         help='Masking ratio (percentage of removed patches).')
+    parser.add_argument('--lin_epochs', default=0, type=int,
+                        help='The epochs of the schedule to increase linearly until min-mask is reached.')
+    parser.add_argument('--lin_epochs', default=400, type=int,
+                        help='The epochs of the schedule to use cosine buildup until mask_ratio is reached.')
     parser.add_argument('--mask_sched', default=None, type=str,
                         help='Masking Ratio Decay Rate (default not decay).')
 
