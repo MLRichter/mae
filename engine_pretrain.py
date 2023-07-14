@@ -23,11 +23,13 @@ def train_one_epoch(model: torch.nn.Module,
                     device: torch.device, epoch: int, loss_scaler,
                     log_writer=None,
                     args=None):
+    mask_ratio = args.mask_ratio
     model.train(True)
     metric_logger = misc.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', misc.SmoothedValue(window_size=1, fmt='{value:.6f}'))
+    metric_logger.add_meter('mask', misc.SmoothedValue(window_size=1, fmt='{value:.6f}'))
     header = 'Epoch: [{}]'.format(epoch)
-    print_freq = 20
+    print_freq = 10
 
     accum_iter = args.accum_iter
 
@@ -41,11 +43,15 @@ def train_one_epoch(model: torch.nn.Module,
         # we use a per iteration (instead of per epoch) lr scheduler
         if data_iter_step % accum_iter == 0:
             lr_sched.adjust_learning_rate(optimizer, data_iter_step / len(data_loader) + epoch, args)
+            if args.mask_sched is not None:
+                mask_ratio = lr_sched.adjust_mask_rate(epoch=epoch, epochs=args.epochs, mask_rate=args.mask_ratio,
+                                          warmup_epochs=args.warmup_epochs, min_mask=args.min_mask)
+
 
         samples = samples.to(device, non_blocking=True)
 
         with torch.cuda.amp.autocast():
-            loss, _, _ = model(samples, mask_ratio=args.mask_ratio)
+            loss, _, _ = model(samples, mask_ratio=mask_ratio)
 
         loss_value = loss.item()
 
@@ -65,6 +71,7 @@ def train_one_epoch(model: torch.nn.Module,
 
         lr = optimizer.param_groups[0]["lr"]
         metric_logger.update(lr=lr)
+        metric_logger.update(mask=mask_ratio)
 
         loss_value_reduce = misc.all_reduce_mean(loss_value)
         if log_writer is not None and (data_iter_step + 1) % accum_iter == 0:
@@ -74,6 +81,7 @@ def train_one_epoch(model: torch.nn.Module,
             epoch_1000x = int((data_iter_step / len(data_loader) + epoch) * 1000)
             log_writer.add_scalar('train_loss', loss_value_reduce, epoch_1000x)
             log_writer.add_scalar('lr', lr, epoch_1000x)
+            log_writer.add_scalar('mask', args.mask_ratio, epoch_1000x)
 
 
     # gather the stats from all processes
