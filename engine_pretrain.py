@@ -44,8 +44,8 @@ def train_one_epoch(model: torch.nn.Module,
         if data_iter_step % accum_iter == 0:
             lr_sched.adjust_learning_rate(optimizer, data_iter_step / len(data_loader) + epoch, args)
             if args.mask_sched is not None:
-                mask_ratio = lr_sched.adjust_mask_rate(epoch=epoch, epochs=args.epochs, mask_rate=args.mask_ratio,
-                                          warmup_epochs=args.warmup_epochs, min_mask=args.min_mask)
+                mask_ratio = lr_sched.adjust_mask_rate(epoch=epoch, cosine_epochs=args.cos_epochs, mask_rate=args.mask_ratio,
+                                          linear_epochs=args.lin_epochs, min_mask=args.min_mask)
 
 
         samples = samples.to(device, non_blocking=True)
