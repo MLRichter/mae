@@ -69,6 +69,8 @@ def get_args_parser():
 
     parser.add_argument('--mask_ratio', default=0.75, type=float,
                         help='Masking ratio (percentage of removed patches).')
+    parser.add_argument('--min_mask', default=0.05, type=float,
+                        help='Masking ratio (percentage of removed patches).')
     parser.add_argument('--mask_sched', default=None, type=str,
                         help='Masking Ratio Decay Rate (default not decay).')
 

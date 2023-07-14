@@ -24,7 +24,7 @@ def adjust_learning_rate(optimizer, epoch, args):
 def adjust_mask_rate(epoch, epochs, mask_rate, warmup_epochs, min_mask):
     """Decay the rate of UNMASKED tokens with half-cycle cosine after warmup"""
     if epoch < warmup_epochs:
-        mask_rate = mask_rate * epoch / warmup_epochs
+        mask_rate = min_mask * epoch / warmup_epochs
     else:
         epoch = epochs - (epoch - warmup_epochs)
         mask_rate = min_mask + (mask_rate - min_mask) * 0.5 * \
