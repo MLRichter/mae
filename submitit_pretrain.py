@@ -33,7 +33,7 @@ def parse_args():
 
 def get_shared_folder() -> Path:
     if Path("/home/mlr/scratch/mae").is_dir():
-        p = Path(f"/home/mlr/projects/def-pal/mlr/ConvNeXt/checkpoint")
+        p = Path(f"/home/mlr/scratch/mae/checkpoint")
         p.mkdir(exist_ok=True)
         return p
     elif Path("/scratch/mlrichter/").is_dir():

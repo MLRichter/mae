@@ -35,21 +35,25 @@ def adjust_mask_rate(epoch, cosine_epochs, mask_rate, linear_epochs, min_mask):
     return mask_rate
 
 
-"""def plot_mask_rate():
+def plot_mask_rate():
+    from matplotlib import pyplot as plt
     actual_epochs = 800
-    cosine_epochs = 400
+    cosine_epochs = 200
     linear_epochs = 0
-    min_mask = 0.0
+    min_mask = 0.1
+    max_mask = 0.85
     mask_rates = []
 
     for epoch in range(actual_epochs + 1):
-        mask_rate = adjust_mask_rate(epoch, cosine_epochs, 0.75, linear_epochs, min_mask)
+        mask_rate = adjust_mask_rate(epoch, cosine_epochs, max_mask, linear_epochs, min_mask)
         mask_rates.append(mask_rate)
 
+    import numpy as np
+    average_masking = np.mean(mask_rates)
     plt.plot(range(actual_epochs + 1), mask_rates)
     plt.xlabel('Epoch')
     plt.ylabel('Mask Rate')
-    plt.title('Mask Rate Decay')
+    plt.title(f'Average Masking: {average_masking}')
     plt.show()
 
 plot_mask_rate()
@@ -58,4 +62,4 @@ plot_mask_rate()
 if __name__ == '__main__':
 
     plot_mask_rate()
-"""
+
