@@ -87,7 +87,7 @@ class Trainer(object):
         self.args.world_size = job_env.num_tasks
         print(f"Process group: {job_env.num_tasks} tasks, rank: {job_env.global_rank}")
 
-"""
+
 def main():
     args = parse_args()
     if args.job_dir == "":
@@ -136,4 +136,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-"""

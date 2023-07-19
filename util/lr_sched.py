@@ -34,13 +34,13 @@ def adjust_mask_rate(epoch, cosine_epochs, mask_rate, linear_epochs, min_mask):
             (1. + math.cos(math.pi * (epoch - linear_epochs) / (cosine_epochs - linear_epochs)))
     return mask_rate
 
-
+"""
 def plot_mask_rate():
     from matplotlib import pyplot as plt
     actual_epochs = 800
     cosine_epochs = 200
     linear_epochs = 0
-    min_mask = 0.1
+    min_mask = 0.15
     max_mask = 0.85
     mask_rates = []
 
@@ -63,3 +63,4 @@ if __name__ == '__main__':
 
     plot_mask_rate()
 
+"""
