@@ -40,6 +40,10 @@ def get_shared_folder() -> Path:
         p = Path("/scratch/mlrichter/checkpoint")
         p.mkdir(exist_ok=True)
         return p
+    elif Path("/fsx/mlrichter/").is_dir():
+        p = Path("/fsx/mlrichter//checkpoint")
+        p.mkdir(exist_ok=True)
+        return p
 
     raise RuntimeError("No shared folder available")
 
