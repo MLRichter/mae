@@ -113,6 +113,8 @@ def main():
     if args.account:
         kwargs['slurm_account'] = args.account
 
+    kwargs["switches"] = 1
+
     executor.update_parameters(
         mem_gb=40 * num_gpus_per_node,
         gpus_per_node=num_gpus_per_node,
