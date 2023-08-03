@@ -253,7 +253,7 @@ def main(args):
     misc.load_model(args=args, model_without_ddp=model_without_ddp, optimizer=optimizer, loss_scaler=loss_scaler)
 
     if args.eval:
-        evaluate(data_loader_test, model=model, mask_ratio=args.mask_ratio, device=device)
+        test_stats = evaluate(data_loader_test, model=model, mask_ratio=args.mask_ratio, device=device)
         print(f"Loss of the network on the {len(dataset_test)} test images: {test_stats['loss']:.4f}, std: {test_stats['loss-std']:.4f}")
         log_stats = {**{f'val_{k}': v for k, v in train_stats.items()},
                      'epoch': args.epochs, }
