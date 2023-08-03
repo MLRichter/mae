@@ -255,7 +255,7 @@ def main(args):
     if args.eval:
         test_stats = evaluate(data_loader_test, model=model, mask_ratio=args.mask_ratio, device=device)
         print(f"Loss of the network on the {len(dataset_test)} test images: {test_stats['loss']:.4f}, std: {test_stats['loss-std']:.4f}")
-        log_stats = {**{f'val_{k}': v for k, v in train_stats.items()},
+        log_stats = {**{f'val_{k}': v for k, v in test_stats.items()},
                      'epoch': args.epochs, }
         if args.output_dir and misc.is_main_process():
             if log_writer is not None:
@@ -275,7 +275,7 @@ def main(args):
             log_writer=log_writer,
             args=args
         )
-        evaluate(data_loader_test, model=model, mask_ratio=args.mask_ratio, device=device)
+        test_stats = evaluate(data_loader_test, model=model, mask_ratio=args.mask_ratio, device=device)
         if args.output_dir and (epoch % 20 == 0 or epoch + 1 == args.epochs):
             misc.save_model(
                 args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
@@ -283,6 +283,8 @@ def main(args):
 
         log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
                         'epoch': epoch,}
+        log_stats_test = {**{f'val_{k}': v for k, v in test_stats.items()}}
+        log_stats.update(log_stats_test)
 
         if args.output_dir and misc.is_main_process():
             if log_writer is not None:
