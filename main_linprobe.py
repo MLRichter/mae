@@ -66,6 +66,8 @@ def get_args_parser():
 
     parser.add_argument('--warmup_epochs', type=int, default=10, metavar='N',
                         help='epochs to warmup LR')
+    parser.add_argument('--auto-resume', default=True,
+                        help='resume from last checkpoint')
 
     # * Finetuning params
     parser.add_argument('--finetune', default='',
