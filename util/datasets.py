@@ -9,6 +9,7 @@
 # --------------------------------------------------------
 
 import os
+import tarfile
 from os.path import isfile
 
 import PIL
@@ -19,6 +20,9 @@ from timm.data import create_transform
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 
 from fast_imagenet import ImageNetDatasetH5
+from tarbal_parser import ParserImageTar
+
+imnet21k_cache = {}
 
 
 def build_dataset(is_train, args, transforms=None):
@@ -26,6 +30,35 @@ def build_dataset(is_train, args, transforms=None):
     if args.data_path.endswith("hdf5"):
         print("Detected file instead of folder, assuming hdf5")
         dataset = ImageNetDatasetH5(args.data_path, split='train' if is_train else 'val', transform=transform)
+    elif "food101" in args.data_path:
+        from dataset import ImageDataset
+        print("Training on FOOD101")
+
+        if "train" not in imnet21k_cache:
+            with tarfile.open(args.data_path) as tf:  # cannot keep this open across processes, reopen later
+                train = ParserImageTar(args.data_path, tf=tf, subset="train")
+                val = ParserImageTar(args.data_path, tf=tf, subset="test")
+                imnet21k_cache["train"] = train
+                imnet21k_cache["val"] = val
+        dataset = ImageDataset(root=args.data_path,
+                               reader=imnet21k_cache["train"] if is_train else imnet21k_cache["val"],
+                               transform=transform)
+        args.nb_classes = len(imnet21k_cache["val"].class_to_idx)
+    elif "eurosat" in args.data_path:
+        from dataset import ImageDataset
+        print("Training on EuroSat")
+
+        if "train" not in imnet21k_cache:
+            with tarfile.open(args.data_path) as tf:  # cannot keep this open across processes, reopen later
+                train = ParserImageTar(args.data_path, tf=tf, subset="train")
+                val = ParserImageTar(args.data_path, tf=tf, subset="val")
+                imnet21k_cache["train"] = train
+                imnet21k_cache["val"] = val
+
+        dataset = ImageDataset(root=args.data_path,
+                               reader=imnet21k_cache["train"] if is_train else imnet21k_cache["val"],
+                               transform=transform)
+        args.nb_classes = len(imnet21k_cache["val"].class_to_idx)
     else:
         root = os.path.join(args.data_path, 'train' if is_train else 'val')
         dataset = datasets.ImageFolder(root, transform=transform)
