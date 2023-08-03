@@ -256,7 +256,7 @@ def main(args):
         test_stats = evaluate(data_loader_test, model=model, mask_ratio=args.mask_ratio, device=device)
         print(f"Loss of the network on the {len(dataset_test)} test images: {test_stats['loss']:.4f}, std: {test_stats['loss-std']:.4f}")
         log_stats = {**{f'val_{k}': v for k, v in test_stats.items()},
-                     'epoch': args.epochs if args.resum is None else args.resume.split("-")[1].split(".pth")[0], }
+                     'epoch': args.epochs if args.resume is None else args.resume.split("-")[1].split(".pth")[0], }
         if args.output_dir and misc.is_main_process():
             if log_writer is not None:
                 log_writer.flush()
