@@ -11,6 +11,8 @@
 import argparse
 import datetime
 import json
+
+import PIL
 import numpy as np
 import os
 import time
@@ -33,7 +35,7 @@ from util.misc import NativeScalerWithGradNormCount as NativeScaler
 
 import models_mae
 
-from engine_pretrain import train_one_epoch
+from engine_pretrain import train_one_epoch, evaluate
 
 
 def str2bool(v):
@@ -128,6 +130,8 @@ def get_args_parser():
     parser.add_argument('--dist_url', default='env://',
                         help='url used to set up distributed training')
     parser.add_argument('--copy', type=str2bool, default=False)
+    parser.add_argument('--eval', action='store_true',
+                        help='Perform evaluation only')
 
 
     return parser
@@ -160,11 +164,26 @@ def main(args):
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
+
+    # val augmentation for IDV
+    if args.input_size <= 224:
+        crop_pct = 224 / 256
+    else:
+        crop_pct = 1.0
+    size = int(args.input_size / crop_pct)
+    transform_test = transforms.Compose([
+        transforms.Resize(size, interpolation=PIL.Image.BICUBIC),
+        transforms.CenterCrop(args.input_size),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
+
     if args.data_path.endswith("hdf5"):
         print("Detected file instead of folder, assuming hdf5")
         dataset_train = ImageNetDatasetH5(args.data_path, split='train', transform=transform_train)
+        dataset_test = ImageNetDatasetH5(args.data_path, split='val', transform=transform_test)
     else:
         dataset_train = datasets.ImageFolder(os.path.join(args.data_path, 'train'), transform=transform_train)
+        dataset_test = datasets.ImageFolder(os.path.join(args.data_path, 'val'), transform=transform_test)
     print(dataset_train)
 
     if True:  # args.distributed:
@@ -173,9 +192,13 @@ def main(args):
         sampler_train = torch.utils.data.DistributedSampler(
             dataset_train, num_replicas=num_tasks, rank=global_rank, shuffle=True
         )
+        sampler_test = torch.utils.data.SequentialSampler(dataset_test)
+
         print("Sampler_train = %s" % str(sampler_train))
     else:
         sampler_train = torch.utils.data.RandomSampler(dataset_train)
+        sampler_test = torch.utils.data.SequentialSampler(dataset_test)
+
 
     if global_rank == 0 and args.log_dir is not None:
         os.makedirs(args.log_dir, exist_ok=True)
@@ -185,6 +208,13 @@ def main(args):
 
     data_loader_train = torch.utils.data.DataLoader(
         dataset_train, sampler=sampler_train,
+        batch_size=args.batch_size,
+        num_workers=args.num_workers,
+        pin_memory=args.pin_mem,
+        drop_last=True,
+    )
+    data_loader_test = torch.utils.data.DataLoader(
+        dataset_test, sampler=sampler_test,
         batch_size=args.batch_size,
         num_workers=args.num_workers,
         pin_memory=args.pin_mem,
@@ -222,6 +252,11 @@ def main(args):
 
     misc.load_model(args=args, model_without_ddp=model_without_ddp, optimizer=optimizer, loss_scaler=loss_scaler)
 
+    if args.eval:
+        evaluate(data_loader_test, model=model, mask_ratio=args.mask_ratio, device=device)
+        print(f"Loss of the network on the {len(dataset_val)} test images: {test_stats['loss']:.4f}, std: {test_stats['loss_std']:.4f}")
+        exit(0)
+
     print(f"Start training for {args.epochs} epochs")
     start_time = time.time()
     for epoch in range(args.start_epoch, args.epochs):
@@ -233,6 +268,7 @@ def main(args):
             log_writer=log_writer,
             args=args
         )
+        evaluate(data_loader_test, model=model, mask_ratio=args.mask_ratio, device=device)
         if args.output_dir and (epoch % 20 == 0 or epoch + 1 == args.epochs):
             misc.save_model(
                 args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,

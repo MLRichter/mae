@@ -16,6 +16,7 @@ import time
 from collections import defaultdict, deque
 from pathlib import Path
 
+import numpy as np
 import torch
 import torch.distributed as dist
 from timm.utils import get_state_dict
@@ -71,6 +72,11 @@ class SmoothedValue(object):
     @property
     def global_avg(self):
         return self.total / self.count
+
+    @property
+    def std(self):
+        d = torch.tensor(list(self.deque), dtype=torch.float32)
+        return torch.std(d).item()
 
     @property
     def max(self):
