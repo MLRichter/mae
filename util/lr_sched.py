@@ -42,7 +42,7 @@ def stepped_mask_rate(epoch, cosine_epochs, mask_rate, linear_epochs, min_mask, 
 
     return min(round(current_rate*4)/4, mask_rate)
 
-
+"""
 def plot_mask_rate():
     from matplotlib import pyplot as plt
     actual_epochs = 800
@@ -71,3 +71,4 @@ if __name__ == '__main__':
 
     plot_mask_rate()
 
+"""
