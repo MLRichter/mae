@@ -21,8 +21,8 @@ from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from fast_imagenet import ImageNetDatasetH5
 
 
-def build_dataset(is_train, args):
-    transform = build_transform(is_train, args)
+def build_dataset(is_train, args, transforms=None):
+    transform = transforms if transforms is not None else build_transform(is_train, args)
     if args.data_path.endswith("hdf5"):
         print("Detected file instead of folder, assuming hdf5")
         dataset = ImageNetDatasetH5(args.data_path, split='train' if is_train else 'val', transform=transform)
