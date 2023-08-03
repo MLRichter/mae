@@ -30,7 +30,7 @@ def build_dataset(is_train, args, transforms=None):
     if args.data_path.endswith("hdf5"):
         print("Detected file instead of folder, assuming hdf5")
         dataset = ImageNetDatasetH5(args.data_path, split='train' if is_train else 'val', transform=transform)
-    elif "food101" in args.data_path:
+    elif "food-101" in args.data_path:
         from dataset import ImageDataset
         print("Training on FOOD101")
 
