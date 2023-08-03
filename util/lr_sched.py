@@ -34,13 +34,21 @@ def adjust_mask_rate(epoch, cosine_epochs, mask_rate, linear_epochs, min_mask):
             (1. + math.cos(math.pi * (epoch - linear_epochs) / (cosine_epochs - linear_epochs)))
     return mask_rate
 
-"""
+
+def stepped_mask_rate(epoch, cosine_epochs, mask_rate, linear_epochs, min_mask, decay_steps = 0.25):
+    """Decay the rate of UNMASKED tokens with half-cycle cosine after warmup"""
+    rate_per_epoch = (mask_rate - min_mask) / (cosine_epochs + linear_epochs)
+    current_rate = min_mask + (rate_per_epoch * epoch)
+
+    return min(round(current_rate*4)/4, mask_rate)
+
+
 def plot_mask_rate():
     from matplotlib import pyplot as plt
     actual_epochs = 800
-    cosine_epochs = 200
+    cosine_epochs = 0
     linear_epochs = 0
-    min_mask = 0.15
+    min_mask = 0.25
     max_mask = 0.85
     mask_rates = []
 
@@ -63,4 +71,3 @@ if __name__ == '__main__':
 
     plot_mask_rate()
 
-"""
