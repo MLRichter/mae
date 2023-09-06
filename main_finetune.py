@@ -256,6 +256,7 @@ def main(args):
         num_classes=args.nb_classes,
         drop_path_rate=args.drop_path,
         global_pool=args.global_pool,
+        img_size=args.input_size
     )
 
     if args.finetune and not args.eval:
