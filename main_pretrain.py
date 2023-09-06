@@ -181,6 +181,14 @@ def main(args):
         print("Detected file instead of folder, assuming hdf5")
         dataset_train = ImageNetDatasetH5(args.data_path, split='train', transform=transform_train)
         dataset_test = ImageNetDatasetH5(args.data_path, split='val', transform=transform_test)
+    elif args.data_path.endswith("cifar10"):
+        print('Enabled Cifar10 training')
+        dataset_train = datasets.CIFAR10(args.data_path, train=True, transform=transform_train, download=True)
+        dataset_test = datasets.CIFAR10(args.data_path, train=False, transform=transform_test, download=True)
+    elif args.data_path.endswith("cifar100"):
+        print('Enabled Cifar10 training')
+        dataset_train = datasets.CIFAR100(args.data_path, train=True, transform=transform_train, download=True)
+        dataset_test = datasets.CIFAR100(args.data_path, train=False, transform=transform_test, download=True)
     else:
         dataset_train = datasets.ImageFolder(os.path.join(args.data_path, 'train'), transform=transform_train)
         dataset_test = datasets.ImageFolder(os.path.join(args.data_path, 'val'), transform=transform_test)
