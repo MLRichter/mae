@@ -31,7 +31,7 @@ def build_dataset(is_train, args, transforms=None):
         print("Detected file instead of folder, assuming hdf5")
         dataset = ImageNetDatasetH5(args.data_path, split='train' if is_train else 'val', transform=transform)
     elif args.data_path.endswith("cifar100"):
-        print('Enabled Cifar10 training', args.data_path)
+        print('Enabled Cifar100 training', args.data_path)
         dataset = datasets.CIFAR100(args.data_path, train=is_train, transform=transform, download=False)
     elif args.data_path.endswith("cifar10"):
         print('Enabled Cifar10 training', args.data_path)
