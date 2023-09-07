@@ -50,7 +50,7 @@ def train_one_epoch(model: torch.nn.Module,
 
         samples = samples.to(device, non_blocking=True)
 
-        with torch.cuda.amp.autocast():
+        with torch.cuda.amp.autocast(dtype=torch.bfloat16):
             loss, _, _ = model(samples, mask_ratio=mask_ratio)
 
         loss_value = loss.item()
@@ -102,7 +102,7 @@ def evaluate(data_loader, model, mask_ratio, device):
         samples = samples.to(device, non_blocking=True)
 
         # compute output
-        with torch.cuda.amp.autocast():
+        with torch.cuda.amp.autocast(dtype=torch.bfloat16):
             loss, _, _ = model(samples, mask_ratio=mask_ratio)
         metric_logger.update(loss=loss.item())
     # gather the stats from all processes
