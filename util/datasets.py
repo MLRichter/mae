@@ -36,6 +36,20 @@ def build_dataset(is_train, args, transforms=None):
     elif args.data_path.endswith("cifar10"):
         print('Enabled Cifar10 training', args.data_path)
         dataset = datasets.CIFAR10(args.data_path, train=is_train, transform=transform, download=False)
+    elif "plantnet" in args.data_path:
+        from dataset import ImageDataset
+        print("Training on PlantNet")
+
+        if "train" not in imnet21k_cache:
+            with tarfile.open(args.data_path) as tf:  # cannot keep this open across processes, reopen later
+                train = ParserImageTar(args.data_path, tf=tf, subset="train")
+                val = ParserImageTar(args.data_path, tf=tf, subset="test")
+                imnet21k_cache["train"] = train
+                imnet21k_cache["val"] = val
+        dataset = ImageDataset(root=args.data_path,
+                               reader=imnet21k_cache["train"] if is_train else imnet21k_cache["val"],
+                               transform=transform)
+        args.nb_classes = len(imnet21k_cache["val"].class_to_idx)
     elif "food-101" in args.data_path:
         from dataset import ImageDataset
         print("Training on FOOD101")
