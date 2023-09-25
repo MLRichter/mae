@@ -60,6 +60,8 @@ def get_args_parser():
                         help='learning rate (absolute lr)')
     parser.add_argument('--blr', type=float, default=0.1, metavar='LR',
                         help='base learning rate: absolute_lr = base_lr * total_batch_size / 256')
+    parser.add_argument('--input_size', default=224, type=int,
+                        help='images input size')
 
     parser.add_argument('--min_lr', type=float, default=0., metavar='LR',
                         help='lower lr bound for cyclic schedulers that hit 0')
@@ -133,13 +135,14 @@ def main(args):
 
     # linear probe: weak augmentation
     transform_train = transforms.Compose([
-            RandomResizedCrop(224, interpolation=3),
+            RandomResizedCrop(args.input_size, interpolation=3),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
     transform_val = transforms.Compose([
             transforms.Resize(256, interpolation=3),
             transforms.CenterCrop(224),
+            transforms.Resize(args.input_size, interpolation=3),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
     #dataset_train = datasets.ImageFolder(os.path.join(args.data_path, 'train'), transform=transform_train)
